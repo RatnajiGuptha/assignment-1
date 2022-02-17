@@ -41,16 +41,12 @@ const hasStatusProperty = (requestQuery) => {
   return requestQuery.status !== undefined;
 };
 
-const hasSearchQProperty = (requestQuery) => {
-  return requestQuery.search_q !== undefined;
-};
-
-const hasCategoryAndWorkProperties = (requestQuery) => {
-  return requestQuery.category !== undefined && requestQuery.work !== undefined;
+const hasWorkProperty = (requestQuery) => {
+  return requestQuery.work !== undefined;
 };
 
 const hasCategoryProperty = (requestQuery) => {
-  return requestQuery.category;
+  return requestQuery.category !== undefined;
 };
 
 const hasCategoryAndWorkProperties = (requestQuery) => {
@@ -67,6 +63,75 @@ const convertTodoDbToResponseObject = (dbObject) => {
     dueDate: dbObject.due_date,
   };
 };
+
+app.get("/todos/", async (request, response) => {
+  let data = null;
+  let getTodoQuery = "";
+  const { search_q, priority, category, work, status } = request.query;
+  switch (true) {
+    case hasPriorityAndStatusProperties(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            status = '${status}' and
+            priority = '${priority}';`;
+      break;
+    case hasStatusProperty(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            status = '${status}';`;
+      break;
+    case hasPriorityProperty(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            priority = '${priority}';`;
+      break;
+    case hasCategoryAndWorkProperties(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            category = '${category}' and
+            work = '${work}';`;
+      break;
+    case hasCategoryAndWorkProperties(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            category = '${category}' and
+            work = '${work}';`;
+      break;
+    case hasWorkProperty(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+            work = '${work}';`;
+      break;
+    case hasCategoryProperty(request.query):
+      getTodoQuery = `
+        SELECT *
+        FROM todo
+        WHERE 
+           category = '${category}';`;
+      break;
+    default:
+      getTodoQuery = `
+      SELECT *
+      FROM todo 
+      WHERE
+        todo = '${search_q}';`;
+      break;
+  }
+  data = await db.all(getTodoQuery);
+  response.send(data.map((each) => convertTodoDbToResponseObject(each)));
+});
 
 app.get("/todos/:todoId", async (request, response) => {
   const { todoId } = request.params;
@@ -96,14 +161,12 @@ app.delete("/todos/:todoId/", async (request, response) => {
   response.send("Todo Deleted");
 });
 
-app.get("/agenda/", async (request, response) => {
+/*app.get("/agenda/", async (request, response) => {
   const { date } = request.query;
   const getQueryResult = `Select * From todo Where due_date =' ${date}';`;
   const queryResult = await db.get(getQueryResult);
   response.send(queryResult);
   //response.send(convertTodoDbToResponseObject(queryResult));
-});
-
-app.put("/todos/:todoId", async (request, response) => {});
+});*/
 
 module.exports = app;
